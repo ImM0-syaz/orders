@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pengurusan Order</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+    background: url('img/background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3); /* lapisan gelap supaya tulisan jelas */
+    pointer-events: none;
+    z-index: -1;
+}
+        
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            color: white;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .pending { color: #ffd700; }
+        .processing { color: #00d4ff; }
+        .completed { color: #00ff88; }
+        .total { color: #ff6b9d; }
+        
+        .order-table {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .table thead th {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 1rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .table tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-action {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-action:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+        
+        .modal-header {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .status-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffd700;
+        }
+        
+        .status-processing {
+            background: rgba(23, 162, 184, 0.2);
+            color: #00d4ff;
+        }
+        
+        .status-completed {
+            background: rgba(40, 167, 69, 0.2);
+            color: #00ff88;
+        }
+        
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .receipt-preview {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .google-form-notice {
+            background: rgba(66, 133, 244, 0.2);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .form-control {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+        
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .btn-success {
+            background: rgba(40, 167, 69, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-success:hover {
+            background: rgba(40, 167, 69, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="text-white text-center mb-0">
+                    <i class="fas fa-clipboard-list me-3"></i>
+                    Sistem Pengurusan Order
+                </h1>
+                <!-- Debug Panel -->
+                <div class="text-center mt-3">
+                    <div id="loadingStatus" class="text-warning mb-2" style="display: none;">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Loading data from Google Sheets...
+                    </div>
+                    <div id="errorStatus" class="text-danger mb-2" style="display: none;"></div>
+                    <button class="btn btn-outline-light btn-sm" onclick="testConnection()">
+                        <i class="fas fa-plug me-1"></i>Test Connection
+                    </button>
+                    <span id="dataStatus" class="text-info ms-3"></span>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Dashboard Cards -->
+        <div class="row mb-5">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card dashboard-card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-clock status-icon pending"></i>
+                        <h3 class="card-title">Pending</h3>
+                        <h2 class="text-warning" id="pendingCount">3</h2>
+                        <p class="text-muted">Order Menunggu</p>
+                    </div>
+                </div>
+            </div>
+            
+
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card dashboard-card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-check-circle status-icon completed"></i>
+                        <h3 class="card-title">Selesai</h3>
+                        <h2 class="text-success" id="completedCount">8</h2>
+                        <p class="text-muted">Order Siap</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card dashboard-card text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-chart-bar status-icon total"></i>
+                        <h3 class="card-title">Jumlah Order</h3>
+                        <h2 class="text-purple" id="totalCount">13</h2>
+                        <p class="text-muted">Semua Order</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="order-table">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Bil.</th>
+                                    <th>Nama Pengedar</th>
+                                    <th>Tarikh</th>
+                                    <th>Status</th>
+                                    <th>Jenis</th>
+                                    <th>No. DO</th>
+                                    <th>Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody">
+                                <tr>
+                                    <td><strong>1</strong></td>
+                                    <td>Ahmad Bookstore</td>
+                                    <td>15/12/2024</td>
+                                    <td><span class="status-badge status-pending">Pending</span></td>
+                                    <td><i class="fas fa-shipping-fast me-1"></i> Pos</td>
+                                    <td id="do-ORD001">-</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-action" onclick="viewOrderDetails('ORD001')" title="Lihat Detail">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-action" onclick="deleteOrder('ORD001')" title="Padam Order">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>2</strong></td>
+                                    <td>Siti Books & Stationery</td>
+                                    <td>14/12/2024</td>
+                                    <td><span class="status-badge status-pending">Pending</span></td>
+                                    <td><i class="fas fa-store me-1"></i> Pickup</td>
+                                    <td id="do-ORD002">-</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-action" onclick="viewOrderDetails('ORD002')" title="Lihat Detail">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-action" onclick="deleteOrder('ORD002')" title="Padam Order">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>3</strong></td>
+                                    <td>Rahman Educational Supplies</td>
+                                    <td>13/12/2024</td>
+                                    <td><span class="status-badge status-completed">Selesai</span></td>
+                                    <td><i class="fas fa-shipping-fast me-1"></i> Pos</td>
+                                    <td id="do-ORD003">DO123456</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-action" onclick="viewOrderDetails('ORD003')" title="Lihat Detail">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-action" onclick="deleteOrder('ORD003')" title="Padam Order">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Detail Order <span id="modalOrderId"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <h6><i class="fas fa-user me-2"></i>Maklumat Pengedar</h6>
+                                <p><strong>Nama:</strong> <span id="dealerName"></span></p>
+                                <p><strong>Email:</strong> <span id="dealerEmail"></span></p>
+                                <p><strong>No. Telefon:</strong> <span id="dealerPhone"></span></p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <h6><i class="fas fa-map-marker-alt me-2"></i>Alamat & Penghantaran</h6>
+                                <p><strong>Alamat:</strong> <span id="dealerAddress"></span></p>
+                                <p><strong>Jenis:</strong> <span id="deliveryType"></span></p>
+                                <p><strong>Status:</strong> <span id="orderStatus"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h6><i class="fas fa-book me-2"></i>Senarai Buku</h6>
+                        <div id="booksList"></div>
+                    </div>
+                    
+                    <div class="info-card" id="trackingSection" style="display: none;">
+                        <h6><i class="fas fa-truck me-2"></i>Maklumat Penghantaran</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label"><strong>No. DO:</strong></label>
+                                <input type="text" class="form-control" id="doNumber" placeholder="Masukkan No. DO">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label"><strong>No. Tracking:</strong></label>
+                                <input type="text" class="form-control" id="trackingNumber" placeholder="Masukkan No. Tracking">
+                            </div>
+                        </div>
+                        <div class="text-center mb-3">
+                            <button class="btn btn-success btn-lg" onclick="saveTracking()">
+                                <i class="fas fa-save me-2"></i>Simpan & Selesaikan Order
+                            </button>
+                        </div>
+                        <div id="currentTracking" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>No. DO:</strong> <span id="displayDO"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>No. Tracking:</strong> <span id="displayTracking"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Google Apps Script URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzpc1st7DD2HDljZG0FjWD-WPs3tl4PWkaOjc9XyRNXXOhFRmQPOoEajkemm0R9X6Bb/exec';
+        
+        // Sample order data (fallback)
+        let orders = {
+            'ORD001': {
+                id: 'ORD001',
+                dealerName: 'Ahmad Bookstore',
+                email: 'ahmad@bookstore.com',
+                phone: '012-3456789',
+                address: 'No. 123, Jalan Buku, Taman Ilmu, 50000 Kuala Lumpur',
+                deliveryType: 'Pos',
+                status: 'Pending',
+                books: [
+                    { title: 'Buku Teks Matematik Tingkatan 4', quantity: 20 },
+                    { title: 'Buku Latihan Sains Tingkatan 5', quantity: 15 }
+                ],
+                tracking: null,
+                doNumber: null,
+                hasReceipt: true
+            },
+            'ORD002': {
+                id: 'ORD002',
+                dealerName: 'Siti Books & Stationery',
+                email: 'siti@books.com',
+                phone: '013-7654321',
+                address: 'No. 456, Jalan Pendidikan, Bandar Baru, 40000 Shah Alam',
+                deliveryType: 'Pickup',
+                status: 'Pending',
+                books: [
+                    { title: 'Buku Sejarah Tingkatan 2', quantity: 30 },
+                    { title: 'Atlas Malaysia', quantity: 10 }
+                ],
+                tracking: null,
+                doNumber: null,
+                hasReceipt: true
+            },
+            'ORD003': {
+                id: 'ORD003',
+                dealerName: 'Rahman Educational Supplies',
+                email: 'rahman@edu.com',
+                phone: '014-9876543',
+                address: 'No. 789, Jalan Akademik, Taman Universiti, 43600 Bangi',
+                deliveryType: 'Pos',
+                status: 'Selesai',
+                books: [
+                    { title: 'Kamus Dewan Bahasa', quantity: 25 },
+                    { title: 'Buku Rujukan Kimia', quantity: 12 }
+                ],
+                tracking: 'TRK987654321',
+                doNumber: 'DO123456',
+                hasReceipt: true
+            }
+        };
+
+        function viewOrderDetails(orderId) {
+            const order = orders[orderId];
+            if (!order) return;
+
+            // Populate modal with order details
+            document.getElementById('modalOrderId').textContent = `#${orderId}`;
+            document.getElementById('dealerName').textContent = order.dealerName;
+            document.getElementById('dealerEmail').textContent = order.email;
+            document.getElementById('dealerPhone').textContent = order.phone;
+            document.getElementById('dealerAddress').textContent = order.address;
+            document.getElementById('deliveryType').innerHTML = `<i class="fas fa-${order.deliveryType === 'Pos' ? 'shipping-fast' : 'store'} me-1"></i>${order.deliveryType}`;
+            
+            // Status with appropriate styling
+            const statusClass = order.status === 'Pending' ? 'status-pending' : 
+                               order.status === 'Dalam Proses' ? 'status-processing' : 'status-completed';
+            document.getElementById('orderStatus').innerHTML = `<span class="status-badge ${statusClass}">${order.status}</span>`;
+
+            // Books list
+            const booksList = document.getElementById('booksList');
+            booksList.innerHTML = order.books.map(book => 
+                `<div class="mb-2 p-3 rounded" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); color: white; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">
+                    <span>${book.title}</span>
+                </div>`
+            ).join('');
+
+            // Tracking section
+            const trackingSection = document.getElementById('trackingSection');
+            const currentTracking = document.getElementById('currentTracking');
+            
+            if (order.status === 'Pending') {
+                trackingSection.style.display = 'block';
+                
+                if (order.tracking && order.doNumber) {
+                    document.getElementById('displayTracking').textContent = order.tracking;
+                    document.getElementById('displayDO').textContent = order.doNumber;
+                    currentTracking.style.display = 'block';
+                    document.getElementById('trackingNumber').value = order.tracking;
+                    document.getElementById('doNumber').value = order.doNumber;
+                } else {
+                    currentTracking.style.display = 'none';
+                    document.getElementById('trackingNumber').value = order.tracking || '';
+                    document.getElementById('doNumber').value = order.doNumber || '';
+                }
+            } else if (order.status === 'Selesai' && (order.tracking || order.doNumber)) {
+                trackingSection.style.display = 'block';
+                document.getElementById('displayTracking').textContent = order.tracking || '-';
+                document.getElementById('displayDO').textContent = order.doNumber || '-';
+                currentTracking.style.display = 'block';
+                document.getElementById('trackingNumber').value = order.tracking || '';
+                document.getElementById('doNumber').value = order.doNumber || '';
+                // Hide the input fields and button for completed orders
+                document.querySelector('#trackingSection .row.mb-3').style.display = 'none';
+                document.querySelector('#trackingSection .text-center').style.display = 'none';
+            } else {
+                trackingSection.style.display = 'none';
+            }
+
+            // Show modal
+            new bootstrap.Modal(document.getElementById('orderDetailsModal')).show();
+        }
+
+        function deleteOrder(orderId) {
+            if (confirm(`Adakah anda pasti mahu memadam order #${orderId}?`)) {
+                // Remove from orders object
+                delete orders[orderId];
+                
+                // Remove from table - find row by checking button onclick attribute
+                const tableBody = document.getElementById('ordersTableBody');
+                const rows = Array.from(tableBody.getElementsByTagName('tr'));
+                
+                for (let row of rows) {
+                    const buttons = row.querySelectorAll('button[onclick*="' + orderId + '"]');
+                    if (buttons.length > 0) {
+                        row.remove();
+                        break;
+                    }
+                }
+                
+                // Update counters
+                updateCounters();
+                
+                alert(`Order #${orderId} telah berjaya dipadam.`);
+            }
+        }
+
+        async function saveTracking() {
+            const trackingNumber = document.getElementById('trackingNumber').value.trim();
+            const doNumber = document.getElementById('doNumber').value.trim();
+            const orderId = document.getElementById('modalOrderId').textContent.replace('#', '');
+            
+            if (!trackingNumber && !doNumber) {
+                alert('Sila masukkan sekurang-kurangnya No. DO atau No. Tracking.');
+                return;
+            }
+
+            // Show loading
+            const saveButton = document.querySelector('#trackingSection .btn-success');
+            const originalText = saveButton.innerHTML;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
+            saveButton.disabled = true;
+
+            try {
+                // Create URL with parameters for GET request (to avoid CORS issues)
+                const params = new URLSearchParams({
+                    action: 'updateOrder',
+                    orderId: orderId,
+                    doNumber: doNumber || '',
+                    tracking: trackingNumber || '',
+                    status: 'Selesai'
+                });
+
+                const updateUrl = `${GOOGLE_SCRIPT_URL}?${params.toString()}`;
+                console.log('Saving to Google Sheets:', updateUrl);
+                
+                const response = await fetch(updateUrl, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+
+                console.log('Save response received');
+
+                // Update local data
+                if (orders[orderId]) {
+                    orders[orderId].tracking = trackingNumber || null;
+                    orders[orderId].doNumber = doNumber || null;
+                    orders[orderId].status = 'Selesai';
+                    
+                    // Update display
+                    document.getElementById('displayTracking').textContent = trackingNumber || '-';
+                    document.getElementById('displayDO').textContent = doNumber || '-';
+                    document.getElementById('currentTracking').style.display = 'block';
+                    
+                    // Hide input fields and button
+                    document.querySelector('#trackingSection .row.mb-3').style.display = 'none';
+                    document.querySelector('#trackingSection .text-center').style.display = 'none';
+                    
+                    // Update status in modal
+                    document.getElementById('orderStatus').innerHTML = '<span class="status-badge status-completed">Selesai</span>';
+                    
+                    // Update table row
+                    updateTableRow(orderId);
+                    
+                    // Update counters
+                    updateCounters();
+                }
+
+                let message = '✅ Data berjaya disimpan ke Google Sheets! Status order telah dikemaskini kepada "Selesai".';
+                if (doNumber && trackingNumber) {
+                    message = `✅ No. DO (${doNumber}) dan No. Tracking (${trackingNumber}) berjaya disimpan ke Google Sheets!`;
+                } else if (doNumber) {
+                    message = `✅ No. DO (${doNumber}) berjaya disimpan ke Google Sheets!`;
+                } else if (trackingNumber) {
+                    message = `✅ No. Tracking (${trackingNumber}) berjaya disimpan ke Google Sheets!`;
+                }
+                
+                alert(message);
+
+                // Reload data after 2 seconds to confirm save
+                setTimeout(() => {
+                    loadOrdersFromSheets();
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error saving to Google Sheets:', error);
+                
+                // Still update local data even if save fails
+                if (orders[orderId]) {
+                    orders[orderId].tracking = trackingNumber || null;
+                    orders[orderId].doNumber = doNumber || null;
+                    orders[orderId].status = 'Selesai';
+                    
+                    updateTableRow(orderId);
+                    updateCounters();
+                }
+                
+                alert('⚠️ Data disimpan secara tempatan, tetapi gagal menyimpan ke Google Sheets. Sila cuba lagi.');
+                
+                // Restore button
+                saveButton.innerHTML = originalText;
+                saveButton.disabled = false;
+            }
+        }
+
+        function updateTableRow(orderId) {
+            const tableBody = document.getElementById('ordersTableBody');
+            const rows = tableBody.getElementsByTagName('tr');
+            
+            for (let row of rows) {
+                const orderCell = row.cells[0];
+                if (orderCell && orderCell.textContent.includes(orderId)) {
+                    const statusCell = row.cells[3];
+                    statusCell.innerHTML = '<span class="status-badge status-completed">Selesai</span>';
+                    
+                    // Update DO number in table
+                    const doCell = document.getElementById(`do-${orderId}`);
+                    if (doCell && orders[orderId] && orders[orderId].doNumber) {
+                        doCell.textContent = orders[orderId].doNumber;
+                    }
+                    break;
+                }
+            }
+        }
+
+        function updateCounters() {
+            let pending = 0, completed = 0;
+            
+            Object.values(orders).forEach(order => {
+                if (order.status === 'Pending') pending++;
+                else if (order.status === 'Selesai') completed++;
+            });
+            
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('totalCount').textContent = pending + completed;
+        }
+
+        // Simulate new orders coming in (for demo purposes)
+        function simulateNewOrder() {
+            // This would normally come from Google Sheets integration
+            console.log('New order received from Google Form!');
+            
+            // In real implementation, this would:
+            // 1. Fetch data from Google Sheets API
+            // 2. Add new rows to the table
+            // 3. Update counters
+            // 4. Show notification
+        }
+
+        // Test connection function
+        async function testConnection() {
+            const loadingStatus = document.getElementById('loadingStatus');
+            const errorStatus = document.getElementById('errorStatus');
+            const dataStatus = document.getElementById('dataStatus');
+            
+            loadingStatus.style.display = 'block';
+            errorStatus.style.display = 'none';
+            dataStatus.textContent = '';
+            
+            try {
+                console.log('Testing connection to:', GOOGLE_SCRIPT_URL);
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                const rawText = await response.text();
+                console.log('Raw response:', rawText);
+                
+                const data = JSON.parse(rawText);
+                console.log('Parsed data:', data);
+                
+                loadingStatus.style.display = 'none';
+                
+                if (data.error) {
+                    errorStatus.textContent = 'Apps Script Error: ' + data.error;
+                    errorStatus.style.display = 'block';
+                } else if (Array.isArray(data)) {
+                    dataStatus.textContent = `✅ Connected! Found ${data.length} records`;
+                    dataStatus.className = 'text-success ms-3';
+                } else {
+                    dataStatus.textContent = '⚠️ Connected but unexpected data format';
+                    dataStatus.className = 'text-warning ms-3';
+                }
+                
+            } catch (error) {
+                loadingStatus.style.display = 'none';
+                errorStatus.textContent = 'Connection Error: ' + error.message;
+                errorStatus.style.display = 'block';
+                console.error('Connection test failed:', error);
+            }
+        }
+
+        // Load data from Google Sheets
+        async function loadOrdersFromSheets() {
+            const loadingStatus = document.getElementById('loadingStatus');
+            const errorStatus = document.getElementById('errorStatus');
+            const dataStatus = document.getElementById('dataStatus');
+            
+            try {
+                loadingStatus.style.display = 'block';
+                errorStatus.style.display = 'none';
+                
+                console.log('Loading data from:', GOOGLE_SCRIPT_URL);
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const rawText = await response.text();
+                console.log('Raw response:', rawText);
+                
+                const data = JSON.parse(rawText);
+                console.log('Parsed data:', data);
+                
+                loadingStatus.style.display = 'none';
+                
+                if (data.error) {
+                    errorStatus.textContent = 'Apps Script Error: ' + data.error;
+                    errorStatus.style.display = 'block';
+                    return;
+                }
+                
+                if (!Array.isArray(data) || data.length === 0) {
+                    dataStatus.textContent = '⚠️ No data found in Google Sheets';
+                    dataStatus.className = 'text-warning ms-3';
+                    return;
+                }
+                
+                // Clear existing orders
+                orders = {};
+                
+                // Convert sheet data to orders object
+                data.forEach((order, index) => {
+                    console.log(`Processing order ${index}:`, order);
+                    
+                    if (order.dealerName) { // Check dealer name instead of orderId
+                        const orderId = order.orderId || `ORD${String(index + 1).padStart(3, '0')}`;
+                        orders[orderId] = {
+                            id: orderId,
+                            dealerName: order.dealerName,
+                            email: order.email || '',
+                            phone: order.phone || '',
+                            address: order.address || '',
+                            deliveryType: order.deliveryType || 'Pos',
+                            status: order.status || 'Pending',
+                            books: order.books ? 
+                                order.books.split('\n').filter(book => book.trim()).map(book => ({ title: book.trim(), quantity: 1 })) : 
+                                [{ title: 'No books listed', quantity: 1 }],
+                            tracking: order.tracking || null,
+                            doNumber: order.doNumber || null,
+                            hasReceipt: false
+                        };
+                    }
+                });
+                
+                console.log('Processed orders:', orders);
+                
+                // Update table and counters
+                updateOrdersTable();
+                updateCounters();
+                
+                dataStatus.textContent = `✅ Loaded ${Object.keys(orders).length} orders from Google Sheets`;
+                dataStatus.className = 'text-success ms-3';
+                
+            } catch (error) {
+                loadingStatus.style.display = 'none';
+                errorStatus.textContent = 'Error: ' + error.message;
+                errorStatus.style.display = 'block';
+                console.error('Error loading data from Google Sheets:', error);
+                
+                dataStatus.textContent = '❌ Using sample data instead';
+                dataStatus.className = 'text-warning ms-3';
+            }
+        }
+        
+        // Update orders table
+        function updateOrdersTable() {
+            const tableBody = document.getElementById('ordersTableBody');
+            tableBody.innerHTML = '';
+            
+            let rowNumber = 1;
+            Object.values(orders).forEach(order => {
+                const row = `
+                    <tr>
+                        <td><strong>${rowNumber}</strong></td>
+                        <td>${order.dealerName}</td>
+                        <td>${new Date().toLocaleDateString('ms-MY')}</td>
+                        <td><span class="status-badge status-${order.status.toLowerCase()}">${order.status}</span></td>
+                        <td><i class="fas fa-${order.deliveryType === 'Pos' ? 'shipping-fast' : 'store'} me-1"></i> ${order.deliveryType}</td>
+                        <td id="do-${order.id}">${order.doNumber || '-'}</td>
+                        <td>
+                            <button class="btn btn-primary btn-action" onclick="viewOrderDetails('${order.id}')" title="Lihat Detail">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-danger btn-action" onclick="deleteOrder('${order.id}')" title="Padam Order">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+                rowNumber++;
+            });
+        }
+
+        // Initialize counters on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load data from Google Sheets first
+            loadOrdersFromSheets();
+            
+            // Refresh data every 30 seconds
+            setInterval(loadOrdersFromSheets, 30000);
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
